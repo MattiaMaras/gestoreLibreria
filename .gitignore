@@ -1,3 +1,9 @@
 # Virtual environment
 .env
 .DS_Store
+
+*.iml
+.idea/
+
+# Cartelle di build
+/out/
