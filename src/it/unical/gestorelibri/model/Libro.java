@@ -17,6 +17,15 @@ public class Libro {
         this.statoLettura = "Da leggere"; // Valore di default
     }
 
+    public Libro(Libro Libro) {
+        this.titolo = Libro.titolo;
+        this.autore = Libro.autore;
+        this.isbn = Libro.isbn;
+        this.genere = Libro.genere;
+        this.valutazione = Libro.valutazione;
+        this.statoLettura = Libro.statoLettura;
+    }
+
     public String getTitolo() {
         return titolo;
     }

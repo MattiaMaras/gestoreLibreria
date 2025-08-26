@@ -68,11 +68,15 @@ public class Libreria implements Subject {
 
     // --- Sezione Memento Pattern ---
     public Memento creaMemento() {
-        return new Memento(new ArrayList<>(this.libri));
+        List<Libro> statoDaSalvare = new ArrayList<>();
+        for (Libro libro : this.libri) {
+            statoDaSalvare.add(new Libro(libro));
+        }
+        return new Memento(statoDaSalvare);
     }
 
     public void ripristina(Memento m) {
-        this.libri = m.getStato();
+        this.libri = new ArrayList<>(m.getStato());
         System.out.println("Stato della libreria ripristinato.");
         notificaObserver();
     }
