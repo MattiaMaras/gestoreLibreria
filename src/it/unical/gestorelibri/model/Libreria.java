@@ -9,44 +9,49 @@ public class Libreria implements Subject {
 
     // --- Sezione Singleton Pattern ---
     private static Libreria istanza;
+    private List<Libro> libri;
+    private List<Observer> observers;
 
-    // Il costruttore è privato per impedire la creazione di istanze dall'esterno
     private Libreria() {
         libri = new ArrayList<>();
         observers = new ArrayList<>();
     }
 
-    // Metodo statico per ottenere l'unica istanza della classe
     public static synchronized Libreria getInstance() {
         if (istanza == null) {
             istanza = new Libreria();
         }
         return istanza;
     }
-    // --- Fine Sezione Singleton ---
-
-
-    private List<Libro> libri;
-    private List<Observer> observers;
 
     public void aggiungiLibro(Libro libro) {
+        if (libro == null) {
+            throw new IllegalArgumentException("Il libro non può essere nullo.");
+        }
         libri.add(libro);
-        System.out.println("Libro aggiunto: " + libro.getTitolo());
         notificaObserver();
     }
 
     public void rimuoviLibro(Libro libro) {
         libri.remove(libro);
-        System.out.println("Libro rimosso: " + libro.getTitolo());
         notificaObserver();
+    }
+
+    /**
+     * Metodo per svuotare la libreria. Utile principalmente per i test
+     * per garantire che ogni test parta da uno stato pulito.
+     */
+    public void pulisciLibreria() {
+        if (!libri.isEmpty()) {
+            libri.clear();
+            notificaObserver();
+        }
     }
 
     public List<Libro> getLibri() {
         return new ArrayList<>(libri);
     }
 
-
-    // --- Sezione Subject Pattern ---
     @Override
     public void registraObserver(Observer obs) {
         observers.add(obs);
@@ -63,10 +68,8 @@ public class Libreria implements Subject {
             observer.update();
         }
     }
-    // --- Fine Sezione Subject ---
 
 
-    // --- Sezione Memento Pattern ---
     public Memento creaMemento() {
         List<Libro> statoDaSalvare = new ArrayList<>();
         for (Libro libro : this.libri) {
@@ -80,5 +83,4 @@ public class Libreria implements Subject {
         System.out.println("Stato della libreria ripristinato.");
         notificaObserver();
     }
-    // --- Fine Sezione Memento ---
 }
