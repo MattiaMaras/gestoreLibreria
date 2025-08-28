@@ -28,11 +28,27 @@ public class Libreria implements Subject {
         if (libro == null) {
             throw new IllegalArgumentException("Il libro non può essere nullo.");
         }
+        //Aggiungo il vincolo di unicità, mi serve per ModificaLibroCommand
+        if (isbnEsiste(libro.getIsbn())) {
+            throw new IllegalArgumentException("Un libro con questo ISBN è già presente nella libreria.");
+        }
         libri.add(libro);
         notificaObserver();
     }
 
+    private boolean isbnEsiste(String isbn) {
+        for (Libro libro : this.libri) {
+            if (libro.getIsbn().equalsIgnoreCase(isbn)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void rimuoviLibro(Libro libro) {
+        if (libro == null) {
+            throw new IllegalArgumentException("Tetnativo di rimuovere un libro nullo.");
+        }
         libri.remove(libro);
         notificaObserver();
     }
@@ -82,5 +98,46 @@ public class Libreria implements Subject {
         this.libri = new ArrayList<>(m.getStato());
         System.out.println("Stato della libreria ripristinato.");
         notificaObserver();
+    }
+
+    public void caricaDati(List<Libro> libriDaCaricare) {
+        this.libri = new ArrayList<>(libriDaCaricare);
+        notificaObserver(); // Notifica la vista che i dati sono stati caricati
+    }
+
+    public void modificaLibro(String isbn, Libro statoNuovo) {
+        if (statoNuovo == null) {
+            throw new IllegalArgumentException("Il nuovo stato del libro non può essere nullo.");
+        }
+
+        // Controlliamo se il nuovo ISBN è valido e unico
+        String nuovoIsbn = statoNuovo.getIsbn();
+        if (!isbn.equalsIgnoreCase(nuovoIsbn) && isbnEsiste(nuovoIsbn)) {
+            throw new IllegalArgumentException("Un altro libro con questo nuovo ISBN è già presente.");
+        }
+
+        // Troviamo il libro da modificare (ISBN è identificativo)
+        Libro libroDaModificare = getLibroByIsbn(isbn);
+        if (libroDaModificare != null) {
+            libroDaModificare.setTitolo(statoNuovo.getTitolo());
+            libroDaModificare.setAutore(statoNuovo.getAutore());
+            libroDaModificare.setIsbn(statoNuovo.getIsbn());
+            libroDaModificare.setGenere(statoNuovo.getGenere());
+            libroDaModificare.setValutazione(statoNuovo.getValutazione());
+            libroDaModificare.setStatoLettura(statoNuovo.getStatoLettura());
+
+            notificaObserver();
+        } else {
+            throw new IllegalArgumentException("Nessun libro trovato con ISBN: " + isbn);
+        }
+    }
+
+    public Libro getLibroByIsbn(String isbn) {
+        for (Libro libro : this.libri) {
+            if (libro.getIsbn().equals(isbn)) {
+                return libro;
+            }
+        }
+        return null;
     }
 }
