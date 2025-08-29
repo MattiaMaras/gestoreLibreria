@@ -18,15 +18,13 @@ public class MainFrame extends JFrame {
         this.persistence = new PersistenceFacade(new JsonPersistenceStrategy());
         //this.persistence = new PersistenceFacade(new CsvPersistenceStrategy());
 
-        // 1. CARICA I DATI PRIMA DI CREARE LA UI
         persistence.carica();
 
         setTitle("Gestore Libreria Personale");
         setSize(800, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-
-        // 2. AGGIUNGI IL LISTENER PER IL SALVATAGGIO
+        
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -37,6 +35,7 @@ public class MainFrame extends JFrame {
 
         BookTablePanel tablePanel = new BookTablePanel();
         ActionPanel actionPanel = new ActionPanel(tablePanel);
+        tablePanel.setActionPanel(actionPanel);
         add(actionPanel.getTopPanel(), BorderLayout.NORTH);
         add(tablePanel, BorderLayout.CENTER);
         add(actionPanel.getBottomPanel(), BorderLayout.SOUTH);

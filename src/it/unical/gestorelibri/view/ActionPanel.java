@@ -4,11 +4,17 @@ import it.unical.gestorelibri.controller.AggiungiLibroCommand;
 import it.unical.gestorelibri.controller.CommandHandler;
 import it.unical.gestorelibri.controller.ModificaLibroCommand;
 import it.unical.gestorelibri.controller.RimuoviLibroCommand;
+import it.unical.gestorelibri.controller.strategy.OrdinaPerAutore;
+import it.unical.gestorelibri.controller.strategy.OrdinaPerTitolo;
+import it.unical.gestorelibri.controller.strategy.OrdinaPerValutazione;
+import it.unical.gestorelibri.controller.strategy.OrdinamentoStrategy;
 import it.unical.gestorelibri.core.Command;
 import it.unical.gestorelibri.model.Libreria;
 import it.unical.gestorelibri.model.Libro;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.FlowLayout;
 
 public class ActionPanel {
@@ -20,10 +26,19 @@ public class ActionPanel {
     private JPanel topPanel;
     private JPanel bottomPanel;
 
+    private JTextField searchField;
+    private JComboBox<String> filterGenereComboBox;
+    private JComboBox<String> filterStatoComboBox;
+    private JComboBox<String> sortComboBox;
+
+    private OrdinamentoStrategy strategiaCorrente;
+
     public ActionPanel(BookTablePanel tablePanel) {
         this.commandHandler = new CommandHandler();
         this.libreria = Libreria.getInstance();
         this.tablePanel = tablePanel;
+
+        this.strategiaCorrente = new OrdinaPerTitolo(); //come ordinamento di default usiamo il titolo del libro
 
         createTopPanel();
         createBottomPanel();
@@ -31,8 +46,45 @@ public class ActionPanel {
 
     private void createTopPanel() {
         topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        // Da aggiungere logica di filtro e ordinamento
-        topPanel.add(new JLabel("Implementazione futura"));
+
+        topPanel.add(new JLabel("Cerca:"));
+        searchField = new JTextField(15);
+        topPanel.add(searchField);
+
+        topPanel.add(new JLabel(" Genere:"));
+        String[] generi = {"Tutti", "Fantasy", "Romanzo", "Saggio"};
+        filterGenereComboBox = new JComboBox<>(generi);
+        topPanel.add(filterGenereComboBox);
+
+        topPanel.add(new JLabel(" Stato:"));
+        String[] stati = {"Tutti", "Da leggere", "In lettura", "Letto"};
+        filterStatoComboBox = new JComboBox<>(stati);
+        topPanel.add(filterStatoComboBox);
+
+        topPanel.add(new JLabel(" Ordina per:"));
+        String[] sortOptions = {"Titolo", "Autore", "Valutazione"};
+        sortComboBox = new JComboBox<>(sortOptions);
+        topPanel.add(sortComboBox);
+
+        DocumentListener documentListener = new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { tablePanel.aggiornaVista(); }
+            @Override public void removeUpdate(DocumentEvent e) { tablePanel.aggiornaVista(); }
+            @Override public void changedUpdate(DocumentEvent e) { tablePanel.aggiornaVista(); }
+        };
+        searchField.getDocument().addDocumentListener(documentListener);
+
+        filterGenereComboBox.addActionListener(e -> tablePanel.aggiornaVista());
+        filterStatoComboBox.addActionListener(e -> tablePanel.aggiornaVista());
+
+        sortComboBox.addActionListener(e -> {
+            String selected = (String) sortComboBox.getSelectedItem();
+            switch (selected) {
+                case "Autore": strategiaCorrente = new OrdinaPerAutore(); break;
+                case "Valutazione": strategiaCorrente = new OrdinaPerValutazione(); break;
+                default: strategiaCorrente = new OrdinaPerTitolo(); break;
+            }
+            tablePanel.aggiornaVista();
+        });
     }
 
     private void createBottomPanel() {
@@ -54,7 +106,7 @@ public class ActionPanel {
             String titolo = JOptionPane.showInputDialog(null, "Inserisci il titolo:");
             if (titolo != null && !titolo.trim().isEmpty()) {
                 String autore = JOptionPane.showInputDialog(null, "Inserisci l'autore:");
-                String isbn = JOptionPane.showInputDialog(null, "Inserisci l'ISBN:");
+                String isbn = JOptionPane.showInputDialog(null, "Inserisci l'ISBN (10 o 13 cifre, es. 978-8817100002):");
                 String genere = JOptionPane.showInputDialog(null, "Inserisci il genere:");
                 Libro nuovoLibro = new Libro(titolo, autore, isbn, genere); //valutazione e stato lettura hanno valore di default
 
@@ -84,7 +136,7 @@ public class ActionPanel {
             if (libroSelezionato != null) {
                 String nuovoTitolo = JOptionPane.showInputDialog(null, "Modifica il titolo:", libroSelezionato.getTitolo());
                 String nuovoAutore = JOptionPane.showInputDialog(null, "Modifica l'autore:", libroSelezionato.getAutore());
-                String nuovoIsbn = JOptionPane.showInputDialog(null, "Modifica l'ISBN:", libroSelezionato.getIsbn());
+                String nuovoIsbn = JOptionPane.showInputDialog(null, "Modifica l'ISBN (10 o 13 cifre):", libroSelezionato.getIsbn());
                 // Altri campi da aggiungere per la versione finale
 
                 if (nuovoTitolo != null && nuovoAutore != null && nuovoIsbn != null) {
@@ -109,11 +161,12 @@ public class ActionPanel {
         ripristinaButton.addActionListener(e -> commandHandler.ripristinaUltimoComando());
     }
 
-    public JPanel getTopPanel() {
-        return topPanel;
-    }
+    // Getter usati da BookTablePanel
+    public String getSearchText() { return searchField.getText(); }
+    public String getGenereSelezionato() { return (String) filterGenereComboBox.getSelectedItem(); }
+    public String getStatoSelezionato() { return (String) filterStatoComboBox.getSelectedItem(); }
+    public OrdinamentoStrategy getStrategiaCorrente() { return strategiaCorrente; }
 
-    public JPanel getBottomPanel() {
-        return bottomPanel;
-    }
+    public JPanel getTopPanel() { return topPanel; }
+    public JPanel getBottomPanel() { return bottomPanel; }
 }
