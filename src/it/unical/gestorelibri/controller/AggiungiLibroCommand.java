@@ -5,6 +5,8 @@ import it.unical.gestorelibri.model.Libreria;
 import it.unical.gestorelibri.model.Libro;
 import it.unical.gestorelibri.model.Memento;
 
+import static it.unical.gestorelibri.utils.ValidationUtils.isIsbnValido;
+
 public class AggiungiLibroCommand implements Command {
 
     private final Libro libroDaAggiungere;
@@ -18,6 +20,9 @@ public class AggiungiLibroCommand implements Command {
 
     @Override
     public void execute() {
+        if (!isIsbnValido(libroDaAggiungere.getIsbn())) {
+            throw new IllegalArgumentException("Il formato dell'ISBN non è valido.");
+        }
         this.memento = receiver.creaMemento();
         receiver.aggiungiLibro(libroDaAggiungere);
     }

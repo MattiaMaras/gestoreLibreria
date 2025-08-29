@@ -3,6 +3,7 @@ package it.unical.gestorelibri.controller;
 import it.unical.gestorelibri.core.Command;
 import it.unical.gestorelibri.model.Libreria;
 import it.unical.gestorelibri.model.Libro;
+import static it.unical.gestorelibri.utils.ValidationUtils.isIsbnValido;
 
 public class ModificaLibroCommand implements Command {
 
@@ -18,6 +19,9 @@ public class ModificaLibroCommand implements Command {
 
     @Override
     public void execute() {
+        if (!isIsbnValido(statoNuovo.getIsbn())) {
+            throw new IllegalArgumentException("Il nuovo formato dell'ISBN non è valido.");
+        }
         receiver.modificaLibro(statoVecchio.getIsbn(), statoNuovo);
     }
 
