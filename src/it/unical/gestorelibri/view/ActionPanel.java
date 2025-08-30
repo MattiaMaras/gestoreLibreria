@@ -11,6 +11,8 @@ import it.unical.gestorelibri.controller.strategy.OrdinamentoStrategy;
 import it.unical.gestorelibri.core.Command;
 import it.unical.gestorelibri.model.Libreria;
 import it.unical.gestorelibri.model.Libro;
+import it.unical.gestorelibri.model.enums.Genere;
+import it.unical.gestorelibri.model.enums.StatoLettura;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -52,13 +54,23 @@ public class ActionPanel {
         topPanel.add(searchField);
 
         topPanel.add(new JLabel(" Genere:"));
-        String[] generi = {"Tutti", "Fantasy", "Romanzo", "Saggio"};
-        filterGenereComboBox = new JComboBox<>(generi);
+        String[] opzioniGenere = new String[Genere.values().length + 1];
+        opzioniGenere[0] = "Tutti";
+        int i = 1;
+        for (Genere g : Genere.values()) {
+            opzioniGenere[i++] = g.toString();
+        }
+        filterGenereComboBox = new JComboBox<>(opzioniGenere);
         topPanel.add(filterGenereComboBox);
 
         topPanel.add(new JLabel(" Stato:"));
-        String[] stati = {"Tutti", "Da leggere", "In lettura", "Letto"};
-        filterStatoComboBox = new JComboBox<>(stati);
+        String[] opzioniStato = new String[StatoLettura.values().length + 1];
+        opzioniStato[0] = "Tutti";
+        int j = 1;
+        for (StatoLettura s : StatoLettura.values()) {
+            opzioniStato[j++] = s.toString();
+        }
+        filterStatoComboBox = new JComboBox<>(opzioniStato);
         topPanel.add(filterStatoComboBox);
 
         topPanel.add(new JLabel(" Ordina per:"));
@@ -104,18 +116,31 @@ public class ActionPanel {
         //AGGIUNGI LIBRO
         aggiungiButton.addActionListener(e -> {
             String titolo = JOptionPane.showInputDialog(null, "Inserisci il titolo:");
-            if (titolo != null && !titolo.trim().isEmpty()) {
-                String autore = JOptionPane.showInputDialog(null, "Inserisci l'autore:");
-                String isbn = JOptionPane.showInputDialog(null, "Inserisci l'ISBN (10 o 13 cifre, es. 978-8817100002):");
-                String genere = JOptionPane.showInputDialog(null, "Inserisci il genere:");
-                Libro nuovoLibro = new Libro(titolo, autore, isbn, genere); //valutazione e stato lettura hanno valore di default
+            if (titolo == null || titolo.trim().isEmpty()) return; // L'utente ha premuto Cancel
 
-                try {
-                    commandHandler.eseguiComando(new AggiungiLibroCommand(nuovoLibro, libreria));
-                } catch (IllegalArgumentException ex) { //eccezione lanciata dal metodo aggiungiLibro dentro Libreria se esiste già nella libreria quell'ISBN
-                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore ISBN", JOptionPane.ERROR_MESSAGE);
-                }
+            String autore = JOptionPane.showInputDialog(null, "Inserisci l'autore:");
+            if (autore == null || autore.trim().isEmpty()) return;
+
+            String isbn = JOptionPane.showInputDialog(null, "Inserisci l'ISBN (10 o 13 cifre), es. 978-8817100002):");
+            if (isbn == null || isbn.trim().isEmpty()) return;
+
+            JComboBox<Genere> genereComboBox = new JComboBox<>(Genere.values());
+            int result = JOptionPane.showConfirmDialog(null, genereComboBox, "Seleziona un genere", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);String genereScelto;
+            if (result == JOptionPane.OK_OPTION) {
+                Genere selectedGenere = (Genere) genereComboBox.getSelectedItem();
+                genereScelto = selectedGenere.toString();
+            } else {
+                return; // L'utente ha premuto Cancel
             }
+
+            Libro nuovoLibro = new Libro(titolo, autore, isbn, genereScelto); //valutazione e stato lettura hanno valore di default
+
+            try {
+                commandHandler.eseguiComando(new AggiungiLibroCommand(nuovoLibro, libreria));
+            } catch (IllegalArgumentException ex) { //eccezione lanciata dal metodo aggiungiLibro dentro Libreria se esiste già nella libreria quell'ISBN
+                JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore ISBN", JOptionPane.ERROR_MESSAGE);
+            }
+
         });
 
         //RIMUOVI LIBRO
@@ -133,24 +158,46 @@ public class ActionPanel {
         //MODIFICA LIBRO
         modificaButton.addActionListener(e -> {
             Libro libroSelezionato = tablePanel.getLibroSelezionato();
-            if (libroSelezionato != null) {
-                String nuovoTitolo = JOptionPane.showInputDialog(null, "Modifica il titolo:", libroSelezionato.getTitolo());
-                String nuovoAutore = JOptionPane.showInputDialog(null, "Modifica l'autore:", libroSelezionato.getAutore());
-                String nuovoIsbn = JOptionPane.showInputDialog(null, "Modifica l'ISBN (10 o 13 cifre):", libroSelezionato.getIsbn());
-                // Altri campi da aggiungere per la versione finale
-
-                if (nuovoTitolo != null && nuovoAutore != null && nuovoIsbn != null) {
-                    Libro datiNuovi = new Libro(nuovoTitolo, nuovoAutore, nuovoIsbn, libroSelezionato.getGenere());
-                    //da mettere il set qui se vogliamo cambiare poi valutazione e stato lettura
-                    try {
-                        Command cmd = new ModificaLibroCommand(libreria, libroSelezionato, datiNuovi);
-                        commandHandler.eseguiComando(cmd);
-                    } catch (IllegalArgumentException ex) {
-                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore di Modifica", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            } else {
+            if (libroSelezionato == null) {
                 JOptionPane.showMessageDialog(null, "Seleziona un libro da modificare.");
+                return;
+            }
+
+            String nuovoTitolo = JOptionPane.showInputDialog(null, "Modifica il titolo:", libroSelezionato.getTitolo());
+            if (nuovoTitolo == null) return;
+
+            String nuovoAutore = JOptionPane.showInputDialog(null, "Modifica l'autore:", libroSelezionato.getAutore());
+            if (nuovoAutore == null) return;
+
+            String nuovoIsbn = JOptionPane.showInputDialog(null, "Modifica l'ISBN (10 o 13 cifre), es. 978-8817100002):\"", libroSelezionato.getIsbn());
+            if (nuovoIsbn == null) return;
+
+            JComboBox<Genere> genereComboBox = new JComboBox<>(Genere.values());
+            int resultGenere = JOptionPane.showConfirmDialog(null, genereComboBox, "Seleziona un nuovo genere", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            String nuovoGenere;
+            if (resultGenere == JOptionPane.OK_OPTION) {
+                Genere selectedGenere = (Genere) genereComboBox.getSelectedItem();
+                nuovoGenere = selectedGenere.toString();
+            } else {
+                return; // L'utente ha premuto Cancel
+            }
+
+            Integer[] opzioniValutazione = {1, 2, 3, 4, 5}; //la valutazione va da 1 a 5
+            Integer nuovaValutazione = (Integer) JOptionPane.showInputDialog(null, "Seleziona una valutazione:", "Valutazione", JOptionPane.QUESTION_MESSAGE, null, opzioniValutazione, libroSelezionato.getValutazione());
+            if (nuovaValutazione == null) return;
+
+            StatoLettura nuovoStatoLettura = (StatoLettura) JOptionPane.showInputDialog(null, "Seleziona lo stato di lettura:", "Stato Lettura", JOptionPane.QUESTION_MESSAGE, null, StatoLettura.values(), StatoLettura.valueOf(libroSelezionato.getStatoLettura().toUpperCase().replace(" ", "_")));
+            if (nuovoStatoLettura == null) return;
+
+            Libro datiNuovi = new Libro(nuovoTitolo, nuovoAutore, nuovoIsbn, nuovoGenere); //valutazione e statoLettura prenderanno i valori di default 0 e da leggere
+            datiNuovi.setValutazione(nuovaValutazione);
+            datiNuovi.setStatoLettura(nuovoStatoLettura.toString());
+
+            try {
+                Command cmd = new ModificaLibroCommand(libreria, libroSelezionato, datiNuovi);
+                commandHandler.eseguiComando(cmd);
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore di Modifica", JOptionPane.ERROR_MESSAGE);
             }
         });
 
