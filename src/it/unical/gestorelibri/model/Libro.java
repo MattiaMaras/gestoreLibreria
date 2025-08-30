@@ -11,7 +11,7 @@ public class Libro {
     public Libro(String titolo, String autore, String isbn, String genere) {
         this.titolo = titolo;
         this.autore = autore;
-        this.isbn = isbn;
+        this.isbn = isbn.replace("-", "").trim(); //normalizzo ISBN prima di salvarlo
         this.genere = genere;
         this.valutazione = 0; // Valore di default
         this.statoLettura = "Da leggere"; // Valore di default
@@ -47,7 +47,7 @@ public class Libro {
     }
 
     public void setIsbn(String isbn) {
-        this.isbn = isbn;
+        this.isbn = isbn.replace("-", "").trim();
     }
 
     public String getGenere() {
