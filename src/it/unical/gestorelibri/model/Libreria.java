@@ -38,7 +38,7 @@ public class Libreria implements Subject {
 
     private boolean isbnEsiste(String isbn) {
         for (Libro libro : this.libri) {
-            if (libro.getIsbn().equalsIgnoreCase(isbn)) {
+            if (libro.getIsbn().replace("-", "").trim().equalsIgnoreCase(isbn.replace("-", "").trim())) {
                 return true;
             }
         }
