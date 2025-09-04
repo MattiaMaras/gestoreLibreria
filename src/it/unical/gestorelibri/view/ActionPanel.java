@@ -17,7 +17,7 @@ import it.unical.gestorelibri.model.enums.StatoLettura;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.FlowLayout;
+import java.awt.*;
 
 public class ActionPanel {
 
@@ -115,32 +115,18 @@ public class ActionPanel {
 
         //AGGIUNGI LIBRO
         aggiungiButton.addActionListener(e -> {
-            String titolo = JOptionPane.showInputDialog(null, "Inserisci il titolo:");
-            if (titolo == null || titolo.trim().isEmpty()) return; // L'utente ha premuto Cancel
+            // Passiamo null perché stiamo aggiungendo un nuovo libro, dentro modifica ad esempio passiamo poi il libro selezionato da modificare
+            BookDialog dialog = new BookDialog((Frame) SwingUtilities.getWindowAncestor(this.bottomPanel), null);
+            dialog.setVisible(true);
 
-            String autore = JOptionPane.showInputDialog(null, "Inserisci l'autore:");
-            if (autore == null || autore.trim().isEmpty()) return;
-
-            String isbn = JOptionPane.showInputDialog(null, "Inserisci l'ISBN (10 o 13 cifre), es. 978-8817100002):");
-            if (isbn == null || isbn.trim().isEmpty()) return;
-
-            JComboBox<Genere> genereComboBox = new JComboBox<>(Genere.values());
-            int result = JOptionPane.showConfirmDialog(null, genereComboBox, "Seleziona un genere", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);String genereScelto;
-            if (result == JOptionPane.OK_OPTION) {
-                Genere selectedGenere = (Genere) genereComboBox.getSelectedItem();
-                genereScelto = selectedGenere.toString();
-            } else {
-                return; // L'utente ha premuto Cancel
+            if (dialog.isConfirmed()) {
+                Libro nuovoLibro = dialog.getLibro();
+                try {
+                    commandHandler.eseguiComando(new AggiungiLibroCommand(nuovoLibro, libreria));
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
+                }
             }
-
-            Libro nuovoLibro = new Libro(titolo, autore, isbn, genereScelto); //valutazione e stato lettura hanno valore di default
-
-            try {
-                commandHandler.eseguiComando(new AggiungiLibroCommand(nuovoLibro, libreria));
-            } catch (IllegalArgumentException ex) { //eccezione lanciata dal metodo aggiungiLibro dentro Libreria se esiste già nella libreria quell'ISBN
-                JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore ISBN", JOptionPane.ERROR_MESSAGE);
-            }
-
         });
 
         //RIMUOVI LIBRO
@@ -163,41 +149,17 @@ public class ActionPanel {
                 return;
             }
 
-            String nuovoTitolo = JOptionPane.showInputDialog(null, "Modifica il titolo:", libroSelezionato.getTitolo());
-            if (nuovoTitolo == null) return;
+            BookDialog dialog = new BookDialog((Frame) SwingUtilities.getWindowAncestor(this.bottomPanel), libroSelezionato);
+            dialog.setVisible(true);
 
-            String nuovoAutore = JOptionPane.showInputDialog(null, "Modifica l'autore:", libroSelezionato.getAutore());
-            if (nuovoAutore == null) return;
-
-            String nuovoIsbn = JOptionPane.showInputDialog(null, "Modifica l'ISBN (10 o 13 cifre), es. 978-8817100002):\"", libroSelezionato.getIsbn());
-            if (nuovoIsbn == null) return;
-
-            JComboBox<Genere> genereComboBox = new JComboBox<>(Genere.values());
-            int resultGenere = JOptionPane.showConfirmDialog(null, genereComboBox, "Seleziona un nuovo genere", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            String nuovoGenere;
-            if (resultGenere == JOptionPane.OK_OPTION) {
-                Genere selectedGenere = (Genere) genereComboBox.getSelectedItem();
-                nuovoGenere = selectedGenere.toString();
-            } else {
-                return; // L'utente ha premuto Cancel
-            }
-
-            Integer[] opzioniValutazione = {1, 2, 3, 4, 5}; //la valutazione va da 1 a 5
-            Integer nuovaValutazione = (Integer) JOptionPane.showInputDialog(null, "Seleziona una valutazione:", "Valutazione", JOptionPane.QUESTION_MESSAGE, null, opzioniValutazione, libroSelezionato.getValutazione());
-            if (nuovaValutazione == null) return;
-
-            StatoLettura nuovoStatoLettura = (StatoLettura) JOptionPane.showInputDialog(null, "Seleziona lo stato di lettura:", "Stato Lettura", JOptionPane.QUESTION_MESSAGE, null, StatoLettura.values(), StatoLettura.valueOf(libroSelezionato.getStatoLettura().toUpperCase().replace(" ", "_")));
-            if (nuovoStatoLettura == null) return;
-
-            Libro datiNuovi = new Libro(nuovoTitolo, nuovoAutore, nuovoIsbn, nuovoGenere); //valutazione e statoLettura prenderanno i valori di default 0 e da leggere
-            datiNuovi.setValutazione(nuovaValutazione);
-            datiNuovi.setStatoLettura(nuovoStatoLettura.toString());
-
-            try {
-                Command cmd = new ModificaLibroCommand(libreria, libroSelezionato, datiNuovi);
-                commandHandler.eseguiComando(cmd);
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore di Modifica", JOptionPane.ERROR_MESSAGE);
+            if (dialog.isConfirmed()) {
+                Libro datiNuovi = dialog.getLibro();
+                try {
+                    Command cmd = new ModificaLibroCommand(libreria, libroSelezionato, datiNuovi);
+                    commandHandler.eseguiComando(cmd);
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore di Modifica", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 
