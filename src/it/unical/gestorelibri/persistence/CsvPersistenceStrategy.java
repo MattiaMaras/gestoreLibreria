@@ -14,13 +14,23 @@ import java.util.List;
 
 public class CsvPersistenceStrategy implements PersistenceStrategy {
 
-    private static final String FILENAME = "libreria.csv";
+    private final String filename;
     private static final String SEPARATOR = ",";
     private static final String HEADER = "titolo,autore,isbn,genere,valutazione,statoLettura";
 
+    //costruttore di default
+    public CsvPersistenceStrategy() {
+        this("libreria.csv");
+    }
+
+    //costruttore per test
+    public CsvPersistenceStrategy(String filename) {
+        this.filename = filename;
+    }
+
     @Override
     public void salva(List<Libro> libri) {
-        try (PrintWriter writer = new PrintWriter(new FileWriter(FILENAME))) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(this.filename))) {
             writer.println(HEADER);
             for (Libro libro : libri) {
                 String riga = String.join(SEPARATOR,
@@ -41,7 +51,7 @@ public class CsvPersistenceStrategy implements PersistenceStrategy {
     @Override
     public List<Libro> carica() {
         List<Libro> libriCaricati = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(FILENAME))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(this.filename))) {
             reader.readLine(); //La riga di intestazione va saltata
 
             String riga;
@@ -61,7 +71,6 @@ public class CsvPersistenceStrategy implements PersistenceStrategy {
         return libriCaricati;
     }
 
-    // Metodo di utility per gestire eventuali virgole nei campi di testo
     private String escape(String value) {
         if (value.contains(SEPARATOR)) {
             return "\"" + value + "\"";
